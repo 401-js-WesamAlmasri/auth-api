@@ -35,19 +35,27 @@ users.virtual('capabilities').get(function () {
 });
 
 users.pre('save', async function () {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 10);
+  try {
+    if (this.isModified('password')) {
+      this.password = await bcrypt.hash(this.password, 10);
+    }
+  } catch (e) {
+    throw new Error(e.message);
   }
 });
 
 // BASIC AUTH
 users.statics.authenticateBasic = async function (username, password) {
-  const user = await this.findOne({ username });
-  const valid = await bcrypt.compare(password, user.password);
-  if (valid) {
-    return user;
+  try {
+    const user = await this.findOne({ username });
+    const valid = await bcrypt.compare(password, user.password);
+    if (valid) {
+      return user;
+    }
+    throw new Error('Invalid User');
+  } catch (e) {
+    throw new Error(e.message);
   }
-  throw new Error('Invalid User');
 };
 
 // BEARER AUTH

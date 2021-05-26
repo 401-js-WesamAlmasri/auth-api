@@ -35,10 +35,14 @@ authRouter.get(
   bearerAuth,
   permissions('delete'),
   async (req, res, next) => {
-    const users = await User.find({});
-    const list = users.map((user) => user.username);
-    res.status(200).json(list);
-  }
+    try {
+      const users = await User.find({});
+      const list = users.map((user) => user.username);
+      res.status(200).json(list);
+    } catch (e) {
+      next(e);
+    }
+  },
 );
 
 authRouter.get('/secret', bearerAuth, async (req, res, next) => {
