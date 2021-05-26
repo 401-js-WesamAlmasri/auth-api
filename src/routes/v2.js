@@ -1,32 +1,13 @@
 'use strict';
 
-const fs = require('fs');
+const modelFider = require('../middleware/model-finder');
 const express = require('express');
-const Collection = require('../models/data-collection.js');
 const bearerAuth = require('../auth/middleware/bearer.js');
 const permissions = require('../auth/middleware/acl.js');
 
 const router = express.Router();
 
-const models = new Map();
-
-router.param('model', (req, res, next) => {
-  const modelName = req.params.model;
-  if (models.has(modelName)) {
-    req.model = models.get(modelName);
-    next();
-  } else {
-    const fileName = `${__dirname}/../models/${modelName}/model.js`;
-    if (fs.existsSync(fileName)) {
-      const model = require(fileName);
-      models.set(modelName, new Collection(model));
-      req.model = models.get(modelName);
-      next();
-    } else {
-      next('Invalid Model');
-    }
-  }
-});
+router.param('model', modelFider);
 
 // user bearer auth middleware for all routes
 router.use(bearerAuth);
@@ -89,7 +70,14 @@ async function handleDelete(req, res, next) {
   try {
     let id = req.params.id;
     let deletedRecord = await req.model.delete(id);
-    res.status(200).json(deletedRecord);
+    if (deletedRecord) {
+      res.status(200).json({});
+    }
+    const errorObject = {
+      status: 404,
+      message: 'Sorry, we could not find what you were looking for',
+    };
+    res.status(404).json(errorObject);
   } catch (e) {
     next(e);
   }
